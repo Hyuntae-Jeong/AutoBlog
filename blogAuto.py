@@ -1,17 +1,14 @@
 # python 3.11.9
 import random
 import time
-import pyperclip
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 import re
 import os
 import glob
-import keyboard
 
-site_url = 'https://nid.naver.com/nidlogin.login?svctype=262144&amp;url=http://undefined/aside/'    #네이버 모바일 로그인 URL
+site_url = 'https://nid.naver.com/nidlogin.login?svctype=262144&url=http://undefined/aside/'    #네이버 모바일 로그인 URL
 
 #크롬 실행
 def exec_chrom():
@@ -25,14 +22,14 @@ def wait_for_user_to_login(driver):
     """
     driver.get(site_url)
     print("Please log in manually in the browser.")
-    print("After logging in, press 'p' in the Python terminal to continue.")
+    print("After logging in, type 'p' and press Enter in the Python terminal to continue.")
 
-    # 's' 키 입력 대기
     while True:
-        if keyboard.is_pressed('p'):  # 'p' 키를 누르면 루프 종료
-            print("Detected 'p' key. Proceeding to the next step.")
+        user_input = input("Enter 'p' to continue: ").strip().lower()
+        if user_input == 'p':
+            print("Detected 'p'. Proceeding to the next step.")
             break
-        time.sleep(0.5)  # CPU 사용량을 줄이기 위해 짧은 대기
+        print("Invalid input. Please type 'p' and press Enter after logging in.")
 
 def extract_links_from_kakao():
     """
@@ -102,16 +99,19 @@ def delete_kakao_files():
 
 def keep_browser_open():
     """
-    브라우저를 계속 열어두고, 'q' 키 입력 시 KakaoTalk 파일 삭제 후 종료
+    브라우저를 계속 열어두고, 'q' 입력 시 KakaoTalk 파일 삭제 후 종료
     """
     try:
-        print("Browser will remain open. Press 'q' to delete files and exit. Press Ctrl+C to close manually.")
+        print("Browser will remain open.")
+        print("Type 'q' and press Enter to delete KakaoTalk files and exit.")
+        print("Press Enter to keep the browser open, or Ctrl+C to close manually.")
         while True:
-            if keyboard.is_pressed('q'):
-                print("Detected 'q' key. Deleting KakaoTalk files and exiting program.")
+            user_input = input("Enter command: ").strip().lower()
+            if user_input == 'q':
+                print("Detected 'q'. Deleting KakaoTalk files and exiting program.")
                 delete_kakao_files()  # KakaoTalk 파일 삭제
                 break  # 루프 종료
-            time.sleep(1)  # 1초씩 대기하며 계속 실행 유지
+            print("Keeping the browser open.")
     except KeyboardInterrupt:
         print("Exiting program. Browser will not be closed.")
 
