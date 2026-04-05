@@ -9,6 +9,7 @@ import os
 import glob
 
 site_url = 'https://nid.naver.com/nidlogin.login?svctype=262144&url=http://undefined/aside/'    #네이버 모바일 로그인 URL
+history_url = 'chrome://history/'    #Chrome history URL
 
 #크롬 실행
 def exec_chrom():
@@ -82,6 +83,14 @@ def open_link(driver, link_list, delay=True):
         if delay:
             time.sleep(random.uniform(0.3, 0.7))  # 랜덤 대기
 
+def open_history_tab(driver):
+    """
+    마지막에 Chrome history 탭 열기
+    """
+    driver.switch_to.new_window('tab')
+    driver.get(history_url)
+    print("\nOpened Chrome history tab.")
+
 def delete_kakao_files():
     """
     현재 디렉토리에서 'KakaoTalk'로 시작하는 모든 .txt 파일을 삭제
@@ -145,6 +154,9 @@ if __name__ == '__main__':
     # '/clip/' 링크 나중에 열기
     print("\nOpening '/clip/' links...")
     open_link(driver, clip_links)
+
+    # 마지막에 history 탭 열기
+    open_history_tab(driver)
 
     # 브라우저 유지
     keep_browser_open()
