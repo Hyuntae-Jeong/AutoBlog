@@ -46,30 +46,25 @@ def extract_links_from_kakao():
     file_name = max(files, key=os.path.getmtime)
     print(f"Reading file: {file_name}")
 
-    try:
-        with open(file_name, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-        
-        general_links = []
-        clip_links = []
+    with open(file_name, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
 
-        for line in lines:
-            match = re.search(r'https?://[^\s]+', line)
-            if match:
-                link = match.group()
-                if '/clip/' in link:
-                    clip_links.append(link)  # '/clip/' 링크 저장
-                else:
-                    general_links.append(link)  # 일반 링크 저장
-        
-        general_links = sorted(set(general_links))
-        clip_links = sorted(set(clip_links))
-        
-        return general_links, clip_links
+    general_links = []
+    clip_links = []
 
-    except FileNotFoundError:
-        print(f"File '{file_name}' not found. Please make sure it exists.")
-        return [], []
+    for line in lines:
+        match = re.search(r'https?://[^\s]+', line)
+        if match:
+            link = match.group()
+            if '/clip/' in link:
+                clip_links.append(link)  # '/clip/' 링크 저장
+            else:
+                general_links.append(link)  # 일반 링크 저장
+
+    general_links = sorted(set(general_links))
+    clip_links = sorted(set(clip_links))
+
+    return general_links, clip_links
 
 def open_link(driver, link_list, delay=True):
     """
