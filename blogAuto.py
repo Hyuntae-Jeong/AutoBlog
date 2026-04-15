@@ -101,19 +101,19 @@ def delete_kakao_files():
             except Exception as e:
                 print(f"Error deleting file {file}: {e}")
 
-def keep_browser_open():
+def keep_browser_open(driver):
     """
-    브라우저를 계속 열어두고, 'q' 입력 시 KakaoTalk 파일 삭제 후 종료
+    브라우저를 계속 열어두고, 'q' 입력 시 KakaoTalk 파일 삭제 및 드라이버/브라우저 종료
     """
     try:
         print("Browser will remain open.")
-        print("Type 'q' and press Enter to delete KakaoTalk files and exit.")
-        print("Press Enter to keep the browser open, or Ctrl+C to close manually.")
+        print("Type 'q' and press Enter to delete KakaoTalk files, close the browser, and exit.")
         while True:
             user_input = input("Enter command: ").strip().lower()
             if user_input == 'q':
-                print("Detected 'q'. Deleting KakaoTalk files and exiting program.")
+                print("Detected 'q'. Deleting KakaoTalk files and closing the browser.")
                 delete_kakao_files()  # KakaoTalk 파일 삭제
+                driver.quit()  # 드라이버 정리 및 크롬 창 닫기
                 break  # 루프 종료
             print("Keeping the browser open.")
     except KeyboardInterrupt:
@@ -154,4 +154,4 @@ if __name__ == '__main__':
     open_history_tab(driver)
 
     # 브라우저 유지
-    keep_browser_open()
+    keep_browser_open(driver)
