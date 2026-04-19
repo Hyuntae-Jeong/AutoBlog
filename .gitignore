@@ -33,3 +33,9 @@ KakaoTalk*.txt
 # Test / cache
 .pytest_cache/
 .mypy_cache/
+
+# Claude Code local settings (contains user-specific paths/permissions)
+.claude/settings.local.json
+
+# Claude Code agent memory (may accumulate personal info across sessions)
+.claude/agent-memory/
