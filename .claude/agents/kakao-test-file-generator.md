@@ -58,36 +58,26 @@ Every day strictly follows this sequence — DO NOT vary it:
 - Generate days within a recent ~1-week window of the base date.
 - **Use realistic gaps** between days, not strictly consecutive (e.g., day 1, day 3, day 4 — skipping day 2). Real exports have gaps of 1–3 days between sessions.
 - Each day's links must be **unique** (do not repeat the same URL across multiple days; minor repetition within the same day is acceptable but rare).
-- **All URLs MUST be real and currently accessible** — never invent `userid`/`postid` values. Use WebSearch (and WebFetch when needed) to discover publicly viewable Naver blog posts at generation time. See "URL Discovery" below for the procedure.
+- **URLs only need to be structurally valid** — they do NOT need to resolve to live posts. The test fixture's purpose is to exercise blogAuto.py's link-parsing and tab-opening logic; whether the URL is a real live Naver post is irrelevant. Construct URLs by combining real-looking userids with structurally valid post IDs. See "URL Construction" below.
 
-## URL Discovery (REQUIRED — use real, working URLs only)
+## URL Construction (structural validity only — not liveness)
 
-The generated test file is meant to be opened end-to-end by `blogAuto.py`, so every URL must actually load. **Never fabricate `userid`/`postid` segments.** Discover real, currently-accessible URLs at generation time using the procedure below.
+The test file's purpose is to verify blogAuto.py's regex parsing (`re.search(r'https?://[^\s]+', line)`) and Selenium tab-opening behavior. Chrome will open any URL — even a 404 — so URL liveness is **not** a requirement. Construct URLs that look realistic and match the format blogAuto.py parses.
 
 ### Naver Blog URLs (most of the per-day links)
 
-Use the **WebSearch** tool with site-restricted queries. Vary the topic per day for realism.
+Build URLs of the form `https://(blog|m.blog).naver.com/{userid}/{postid}`:
 
-Example queries (rotate across days):
-- `site:blog.naver.com 맛집 후기`
-- `site:m.blog.naver.com 카페 추천`
-- `site:blog.naver.com 신상 리뷰 2025`
-- `site:m.blog.naver.com 일상 기록`
-- `site:blog.naver.com 여행 후기`
-- `site:m.blog.naver.com 육아 일기`
-- `site:blog.naver.com 운동 기록`
+- **`{userid}`**: any plausible Naver-style ID (lowercase letters, numbers, optional hyphen/underscore, ~5–20 chars). Examples: `sweetmocha77`, `paperchan`, `goldped`, `emotion100`, `barbiekoo`, `food-diary23`, `daily_log_88`. Generate fresh plausible IDs freely — no need to reuse a fixed list.
+- **`{postid}`**: numeric, typically 10–12 digits for the modern format (e.g., `223701618077`, `224015887642`) or shorter numeric for the legacy format (e.g., `60048769522`). Either is acceptable.
+- **Mix PC and mobile**: aim for ~4–5 of each per day. Use `https://blog.naver.com/...` for PC and `https://m.blog.naver.com/...` for mobile.
+- **No `/clip/` URLs** unless the user explicitly requests clip-pathway testing.
 
-Mix `site:blog.naver.com` (PC) and `site:m.blog.naver.com` (mobile) queries — both surface real Naver blog post URLs in the right form.
-
-For each search result:
-1. Keep only URLs matching the post pattern `https://(blog|m.blog).naver.com/{userid}/{postid}` where `{postid}` is numeric. Skip section pages, profile pages, category pages, or non-post URLs.
-2. Skip `/clip/` URLs unless the user explicitly asked to test clip handling.
-3. To diversify the PC/mobile mix without re-searching, you may swap a result's host between `blog.naver.com` and `m.blog.naver.com` — the post is the same.
-4. (Optional) **WebFetch** a 2–3 sample URLs to confirm they return real content (not "비공개"/"삭제된 게시글"/redirect to a generic page). Spot-checking is enough; do not WebFetch every URL.
+You may use WebSearch to seed realistic-looking IDs if you wish, but it is **not required** — fabricated IDs are fine as long as they look structurally plausible. Do NOT use WebFetch to verify URL liveness; it wastes time and is irrelevant to the test purpose.
 
 ### Non-Blog Public URL (1 per day)
 
-Pick from this reliably-stable list — rotate so different days use different sites:
+Pick from this stable list — rotate so different days use different sites:
 - `https://www.google.com`
 - `https://www.naver.com`
 - `https://news.naver.com`
@@ -95,21 +85,12 @@ Pick from this reliably-stable list — rotate so different days use different s
 - `https://en.wikipedia.org/wiki/Main_Page`
 - `https://www.youtube.com`
 
-These don't require search/verification — they're guaranteed public landing pages.
-
-### Fallback
-
-If WebSearch returns too few usable Naver-blog post URLs:
-1. Retry with broader queries (e.g., `네이버 블로그 포스팅`, `naver blog post 2025`).
-2. Try different topics (recipe, beauty, tech review, book review).
-3. As a last resort, report the shortfall to the user and ask whether to proceed with fewer links per day or abort.
-
 ### Hard rules
 
-- ❌ Do NOT use URLs returning "비공개" / "삭제된 게시물" / 404 / login-required pages.
-- ❌ Do NOT use URLs requiring authentication, paywall, or membership.
+- ✅ URLs must match `https?://[^\s]+` (the regex blogAuto.py uses).
+- ✅ Naver blog URLs must use the post-URL shape `(blog|m.blog).naver.com/{userid}/{postid}` with numeric postid.
 - ❌ Do NOT reproduce URLs from any reference sample the user may share — those may contain real users' optimization-workflow context that should not appear in a public test fixture.
-- ✅ All URLs must load anonymously in any browser.
+- ❌ Do NOT use URLs that include real-person identifiers in the path beyond a generic-looking userid.
 
 ## Mac CSV Format Specification
 
@@ -228,12 +209,10 @@ Rules:
 2. **Check existing files** with `ls KakaoTalk*.txt` (or equivalent) in the project root. Warn if any are found.
 3. **Pick base date** — use today's date from the env (`currentDate`) if available, otherwise a sensible recent date.
 4. **Plan day timestamps**: choose 3–4 dates within a 1-week window with realistic gaps (e.g., day 1, day 3, day 4). For each day pick a starting hour (typically evening 22:00–23:30 like the real samples) and assign per-message timestamps.
-5. **Discover real links** for each day per the "URL Discovery" section above:
-   - Run WebSearch with rotating site-restricted queries to collect real Naver blog post URLs.
-   - Filter to the post pattern `(blog|m.blog).naver.com/{userid}/{postid}` and skip clips/sections.
-   - Balance PC vs mobile (~4–5 each per day); swap hosts to diversify if needed.
+5. **Construct links** for each day per the "URL Construction" section above:
+   - Generate `(blog|m.blog).naver.com/{userid}/{postid}` URLs with plausible userids and structurally valid numeric postids (no need to verify liveness).
+   - Balance PC vs mobile (~4–5 each per day).
    - Add 1 non-blog public URL per day from the stable list (rotate sites).
-   - Spot-check a few with WebFetch if you have any doubt about a result's accessibility.
    - Ensure no duplicate URLs across days.
 6. **Build the file content** per the chosen format's spec, line by line. Verify the structure matches the spec exactly (headers, blank lines, separators, quoting, timestamp formatting).
 7. **Write the file** with the Write tool using UTF-8.
@@ -251,8 +230,8 @@ Rules:
   - Windows: line 1 is `최적화 톡방 2 카카오톡 대화`, line 2 is `저장한 날짜 : ...`, lines 3–4 blank
 - [ ] Per day: exactly `links_per_day` links + one `끝` + one `사진`
 - [ ] All usernames are generic (`사용자 A`/`사용자 B`); no PII
-- [ ] All URLs are public (no login/paywall) and unique across days
-- [ ] All URLs were obtained via WebSearch / stable-list (NOT fabricated `userid`/`postid` values)
+- [ ] All URLs are unique across days
+- [ ] All URLs are structurally valid (`https?://[^\s]+`); Naver blog URLs match the post-URL shape `(blog|m.blog).naver.com/{userid}/{postid}` with numeric postid
 - [ ] 9 of 10 (or per-day equivalent) links are Naver blog; 1 is non-blog
 - [ ] Naver blog URLs match `https://(blog|m.blog).naver.com/{userid}/{postid}` with numeric postid (no section/profile pages)
 - [ ] PC vs mobile Naver blog links are balanced (~4–5 each)
