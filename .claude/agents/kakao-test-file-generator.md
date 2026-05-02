@@ -1,6 +1,6 @@
 ---
 name: "kakao-test-file-generator"
-description: "Use this agent to create a temporary KakaoTalk chat export file for testing the blogAuto.py script. The agent generates a mock KakaoTalk*.txt file in EITHER Mac CSV format (Date,User,Message header + YYYY-MM-DD HH:MM:SS,\"User\",\"content\" rows) OR Windows plain-text format (title/saved-date header + per-day Korean-date sections like 'YYYY년 M월 D일 오전/오후 HH:MM, User : content'). The file simulates 3–4 days of the daily optimization workflow: each day User A sends ~10 publicly accessible links (mix of Naver blog PC/mobile + 1 non-blog), then sends '끝', then User B replies with a single '사진'. Pass `format=mac` (default), `format=windows`, or `format=both` in the invoking prompt. <example>Context: The user wants a Mac-style test export. user: \"blogAuto.py 테스트용 카카오톡 파일 만들어줘\" assistant: \"I'll launch the kakao-test-file-generator agent with the default Mac format to create a 3-day test file.\" <commentary>Default format is Mac since the project's primary platform is darwin.</commentary></example> <example>Context: The user wants a Windows export to test format compatibility. user: \"윈도우 카톡 형식으로 4일치 테스트 파일 만들어줘\" assistant: \"Now let me launch the kakao-test-file-generator agent with format=windows and days=4.\" <commentary>User explicitly requested Windows format and 4 days.</commentary></example> <example>Context: The user wants both formats for cross-platform testing. user: \"맥과 윈도우 형식 둘 다 만들어줘\" assistant: \"I'll launch the kakao-test-file-generator agent with format=both to generate one file in each format.\" <commentary>format=both produces two separate files.</commentary></example>"
+description: "Use this agent to create a temporary KakaoTalk chat export file for testing the blogAuto.py script. The agent generates a mock KakaoTalk*.txt file in EITHER Mac CSV format (Date,User,Message header + YYYY-MM-DD HH:MM:SS,\"User\",\"content\" rows) OR Windows plain-text format (title '최적화 톡방 님과 카카오톡 대화' + ISO saved-date '저장한 날짜 : YYYY-MM-DD HH:MM:SS' + per-day dash-wrapped section headers '--------------- YYYY년 M월 D일 요일 ---------------' with messages '[User] [오전/오후 H:MM] content'). The file simulates 3–4 days of the daily optimization workflow: each day User A sends ~10 publicly accessible links (mix of Naver blog PC/mobile + 1 non-blog), then sends '끝', then User B replies with a single '사진'. Pass `format=mac` (default), `format=windows`, or `format=both` in the invoking prompt. <example>Context: The user wants a Mac-style test export. user: \"blogAuto.py 테스트용 카카오톡 파일 만들어줘\" assistant: \"I'll launch the kakao-test-file-generator agent with the default Mac format to create a 3-day test file.\" <commentary>Default format is Mac since the project's primary platform is darwin.</commentary></example> <example>Context: The user wants a Windows export to test format compatibility. user: \"윈도우 카톡 형식으로 4일치 테스트 파일 만들어줘\" assistant: \"Now let me launch the kakao-test-file-generator agent with format=windows and days=4.\" <commentary>User explicitly requested Windows format and 4 days.</commentary></example> <example>Context: The user wants both formats for cross-platform testing. user: \"맥과 윈도우 형식 둘 다 만들어줘\" assistant: \"I'll launch the kakao-test-file-generator agent with format=both to generate one file in each format.\" <commentary>format=both produces two separate files.</commentary></example>"
 model: sonnet
 color: yellow
 ---
@@ -132,60 +132,76 @@ Date,User,Message
 ## Windows Plain-Text Format Specification
 
 ```
-최적화 톡방 N 카카오톡 대화
-저장한 날짜 : YYYY년 M월 D일 오전/오후 H:MM
+최적화 톡방 님과 카카오톡 대화
+저장한 날짜 : YYYY-MM-DD HH:MM:SS
 
-
-YYYY년 M월 D일 오전/오후 H:MM
-YYYY년 M월 D일 오전/오후 H:MM, UserName : content or URL
+--------------- YYYY년 M월 D일 요일 ---------------
+[UserName] [오전/오후 H:MM] content or URL
+[UserName] [오전/오후 H:MM] content or URL
 ... (more messages for this day) ...
-YYYY년 M월 D일 오전/오후 H:MM, UserName : 끝
-
-YYYY년 M월 D일 오전/오후 H:MM
-YYYY년 M월 D일 오전/오후 H:MM, UserName : 사진
-
-YYYY년 M월 D일 오전/오후 H:MM
+[UserName] [오전/오후 H:MM] 끝
+[UserName2] [오전/오후 H:MM] 사진
+--------------- YYYY년 M월 D일 요일 ---------------
 ... (next day's messages) ...
 ```
 
 Rules:
-- **Line 1**: `최적화 톡방 N 카카오톡 대화` (literal; use `2` as the room number to match the real sample)
-- **Line 2**: `저장한 날짜 : YYYY년 M월 D일 오전/오후 H:MM` (saved-date stamp, set to a time slightly after the last message in the file; H is 1–12 with NO leading zero)
-- **Lines 3 and 4**: BOTH BLANK (two blank lines after the header)
-- **Each new day** begins with a "section header" line containing only the timestamp of that day's first message: `YYYY년 M월 D일 오전/오후 H:MM`
-- **Each message line**: `YYYY년 M월 D일 오전/오후 H:MM, UserName : content`
-  - Timestamp is 12-hour with `오전` or `오후`, NO seconds, hour with NO leading zero (e.g., `오후 11:48`, `오전 12:05`)
-  - **NO quotes** around username or content
-  - Separator between username and content is ` : ` (space-colon-space)
-- **A blank line** separates each day's messages from the next day's section header
-- The `사진` message from User B may belong to the same day as `끝` (same section) OR start its own next-day section if it crossed midnight — both are valid; pick whichever matches your timestamps
-- Filename pattern: `KakaoTalk_최적화 톡방 2_YYYY-MM-DD HH-MM-SS.txt` (note the space inside the room name and the dashes inside the time component; use 24-hour HH-MM-SS for the file's timestamp suffix)
+- **Line 1**: `최적화 톡방 님과 카카오톡 대화` (literal — note `님과` is a Korean particle meaning "with", not a username; the chat-room name "최적화 톡방" is generic enough to keep verbatim)
+- **Line 2**: `저장한 날짜 : YYYY-MM-DD HH:MM:SS` (ISO date with 24-hour clock and seconds, e.g., `2026-05-02 23:24:53`; set to a moment slightly after the last message in the file)
+- **Line 3**: BLANK (single blank line — only one, NOT two — between header and first day section)
+- **Day section header**: `--------------- YYYY년 M월 D일 요일 ---------------`
+  - EXACTLY 15 dashes, single space, full Korean date with day-of-week, single space, 15 dashes
+  - 요일 is the Korean weekday name: `월요일`, `화요일`, `수요일`, `목요일`, `금요일`, `토요일`, `일요일` (must match the actual day-of-week of the date)
+  - Day number has NO leading zero (e.g., `4월 5일`, not `4월 05일`)
+- **Each message line**: `[UserName] [오전/오후 H:MM] content`
+  - Username wrapped in `[ ]`
+  - Time wrapped in `[ ]`, separated from username by a single space
+  - Time is 12-hour (`오전`/`오후`), hour with NO leading zero (1–12), minute with leading zero (`H:MM`), NO seconds
+  - After the closing `]` of the time bracket, a single space, then the message content (URL or text)
+  - NO date in the message line itself (the date comes from the section header above)
+  - NO commas, NO `:` separator — the `[user] [time] content` triple IS the entire structure
+- **NO blank lines** between consecutive messages within a day, and **NO blank line** between a day's last message and the next day's section header — sections butt directly against each other (the section header line itself is the separator)
+- **`사진` placement** — both patterns are realistic; pick whichever matches your chosen timestamps:
+  - **Same-day**: User B's `사진` appears immediately after User A's `끝` under the same section header (when 사진 was sent later the same calendar day)
+  - **Cross-midnight**: User B's `사진` appears under the NEXT day's section header — possibly as the section's only message — when 사진 was sent past midnight (e.g., User A finished 끝 at 23:31 on Tue → a `--------------- 2026년 X월 Y일 수요일 ---------------` header appears, with `[사용자 B] [오전 12:27] 사진` as its sole entry)
+- **Filename pattern**: `KakaoTalk_YYYYMMDD_HHMM_SS_MMM_group.txt`
+  - `YYYYMMDD` — date with no separators
+  - `_HHMM` — 24-hour hour+minute (no separator between H and M)
+  - `_SS` — seconds (zero-padded)
+  - `_MMM` — milliseconds (zero-padded to 3 digits)
+  - Trailing `_group.txt` literal
+  - Example: `KakaoTalk_20260502_2324_44_732_group.txt` (saved 2026-05-02 23:24:44.732)
+  - The filename's timestamp typically precedes the `저장한 날짜` line by a few seconds (export operation duration)
 
 ### Windows Example (3 days, 10 links per day — abbreviated)
 ```
-최적화 톡방 2 카카오톡 대화
-저장한 날짜 : 2026년 4월 25일 오후 1:15
+최적화 톡방 님과 카카오톡 대화
+저장한 날짜 : 2026-04-25 13:15:42
 
-
-2026년 4월 21일 오후 10:33
-2026년 4월 21일 오후 10:33, 사용자 A : https://m.blog.naver.com/example1/224000001
-2026년 4월 21일 오후 10:33, 사용자 A : https://blog.naver.com/example2/224000002
+--------------- 2026년 4월 21일 화요일 ---------------
+[사용자 A] [오후 10:33] https://m.blog.naver.com/example1/224000001
+[사용자 A] [오후 10:33] https://blog.naver.com/example2/224000002
 ... (8 more lines for day 1) ...
-2026년 4월 21일 오후 10:34, 사용자 A : 끝
-
-2026년 4월 21일 오후 11:22
-2026년 4월 21일 오후 11:22, 사용자 B : 사진
-
-2026년 4월 23일 오후 10:46
-2026년 4월 23일 오후 10:46, 사용자 A : https://m.blog.naver.com/example11/224000011
+[사용자 A] [오후 10:34] 끝
+[사용자 B] [오후 11:22] 사진
+--------------- 2026년 4월 23일 목요일 ---------------
+[사용자 A] [오후 10:46] https://m.blog.naver.com/example11/224000011
 ... (9 more lines for day 2) ...
-2026년 4월 23일 오후 10:47, 사용자 A : 끝
+[사용자 A] [오후 10:47] 끝
+[사용자 B] [오후 11:30] 사진
+--------------- 2026년 4월 24일 금요일 ---------------
+[사용자 A] [오후 10:10] https://blog.naver.com/example21/224000021
+... (9 more lines for day 3) ...
+[사용자 A] [오후 10:11] 끝
+[사용자 B] [오후 10:55] 사진
+```
 
-2026년 4월 23일 오후 11:30
-2026년 4월 23일 오후 11:30, 사용자 B : 사진
-
-2026년 4월 24일 오후 10:10
-... (day 3 lines) ...
+### Cross-Midnight 사진 Variant (realistic alternative)
+```
+... last day's links ...
+[사용자 A] [오후 11:55] 끝
+--------------- 2026년 4월 22일 수요일 ---------------
+[사용자 B] [오전 12:27] 사진
 ```
 
 ## Username & Privacy Rules
@@ -227,7 +243,7 @@ Rules:
 
 - [ ] Format header matches spec exactly:
   - Mac: line 1 is `Date,User,Message`
-  - Windows: line 1 is `최적화 톡방 2 카카오톡 대화`, line 2 is `저장한 날짜 : ...`, lines 3–4 blank
+  - Windows: line 1 is `최적화 톡방 님과 카카오톡 대화`, line 2 is `저장한 날짜 : YYYY-MM-DD HH:MM:SS`, line 3 is the only blank line (NOT two blanks)
 - [ ] Per day: exactly `links_per_day` links + one `끝` + one `사진`
 - [ ] All usernames are generic (`사용자 A`/`사용자 B`); no PII
 - [ ] All URLs are unique across days
@@ -239,7 +255,11 @@ Rules:
 - [ ] Filename matches the format's pattern AND glob `KakaoTalk*.txt`
 - [ ] UTF-8 encoding
 - [ ] Mac: timestamps are 24-hour `HH:MM:SS` with quoted user/content; no inter-day blank lines
-- [ ] Windows: timestamps are 12-hour `오전/오후 H:MM` (no leading-zero hour, no seconds); unquoted user/content with ` : ` separator; blank line between days; per-day section header
+- [ ] Windows:
+  - Day separator is `--------------- YYYY년 M월 D일 요일 ---------------` (15 dashes each side, weekday matches the actual day-of-week)
+  - Message lines are `[UserName] [오전/오후 H:MM] content` — bracketed user, bracketed 12-hour time (no leading-zero hour, no seconds), space, content; NO commas, NO `:` separator
+  - NO blank lines between messages or between day sections (sections butt directly against each other)
+  - Filename matches `KakaoTalk_YYYYMMDD_HHMM_SS_MMM_group.txt`
 
 ## Edge Cases
 
