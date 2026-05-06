@@ -87,6 +87,28 @@ def parse_kakao_messages(file_path, fmt):
     raise ValueError(f"알 수 없는 포맷: {fmt!r}")
 
 
+def filter_last_day_messages(messages):
+    """
+    파싱된 메시지 리스트에서 "마지막 하루치"만 잘라 반환하는 순수 함수.
+    최적화 사이클(사용자 A 링크들 → "끝" → 사용자 B "사진")이 여러 날 누적된
+    파일에서 가장 마지막 "사진" 메시지 다음부터 끝까지가 마지막 하루치 작업 대상.
+
+    :param messages: parse_kakao_messages()의 결과인 [(user, content), ...]
+    :return: 새 리스트 (입력은 절대 변경하지 않음)
+        - "사진"이 하나도 없으면 전체 입력의 사본 반환 (단일 날짜 파일로 간주)
+        - "사진"이 마지막 항목이면 빈 리스트 (다음 사이클 미시작)
+        - 그 외에는 마지막 "사진" 다음 인덱스부터 끝까지 슬라이스
+    """
+    last_photo_idx = -1
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i][1].strip() == "사진":
+            last_photo_idx = i
+            break
+    if last_photo_idx == -1:
+        return list(messages)
+    return list(messages[last_photo_idx + 1:])
+
+
 def extract_links_from_kakao():
     """
     'KakaoTalk'로 시작하는 텍스트 파일에서 링크를 추출하고,
