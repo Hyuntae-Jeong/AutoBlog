@@ -7,6 +7,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import re
 import os
 import glob
+import csv
 
 site_url = 'https://nid.naver.com/nidlogin.login?svctype=262144&url=http://undefined/aside/'    #네이버 모바일 로그인 URL
 history_url = 'chrome://history/'    #Chrome history URL
@@ -48,6 +49,42 @@ def detect_kakao_format(file_path):
     if "최적화 톡방" in first_line and second_line.startswith("저장한 날짜 :"):
         return "windows"
     raise ValueError(f"지원하지 않는 KakaoTalk 파일 포맷입니다: {file_path}")
+
+
+def parse_kakao_messages(file_path, fmt):
+    """
+    KakaoTalk 내보내기 파일을 (사용자, 내용) 튜플 리스트로 파싱.
+    URL 추출/필터링은 호출자의 책임. 이번 단계에서는 메시지 단위로만 정규화.
+    :param file_path: 파일 경로
+    :param fmt: "mac" 또는 "windows" (detect_kakao_format()의 반환값)
+    :return: [(user, content), ...] 등장 순서 보존
+    :raises ValueError: 알 수 없는 fmt 값
+    """
+    messages = []
+    if fmt == "mac":
+        # csv 모듈이 따옴표 처리/콤마 이스케이프를 알아서 해줘서 URL 끝 따옴표 회귀 차단
+        with open(file_path, 'r', encoding='utf-8', newline='') as file:
+            reader = csv.reader(file)
+            next(reader, None)  # Date,User,Message 헤더 스킵
+            for row in reader:
+                if len(row) >= 3:
+                    messages.append((row[1], row[2]))
+        return messages
+    if fmt == "windows":
+        # 메시지 라인 형식: [사용자명] [오전/오후 H:MM] 내용
+        pattern = re.compile(r'^\[(.+?)\] \[(?:오전|오후) \d{1,2}:\d{2}\] (.*)$')
+        with open(file_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+        for line in lines[2:]:  # 1·2번째 줄(헤더) 스킵
+            line = line.rstrip('\n')
+            if not line.strip():
+                continue  # 빈 줄 스킵 (헤더 다음 + 그 외)
+            m = pattern.match(line)
+            if m:
+                messages.append((m.group(1), m.group(2)))
+            # 매치 실패하면 섹션 헤더(--------- … ---------)이거나 멀티라인 잔여물 — 스킵
+        return messages
+    raise ValueError(f"알 수 없는 포맷: {fmt!r}")
 
 
 def extract_links_from_kakao():
