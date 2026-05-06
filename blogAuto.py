@@ -32,6 +32,24 @@ def wait_for_user_to_login(driver):
             break
         print("Invalid input. Please type 'p' and press Enter after logging in.")
 
+def detect_kakao_format(file_path):
+    """
+    KakaoTalk 내보내기 파일의 포맷을 첫 2줄만 읽고 판별.
+    :param file_path: 검사할 파일 경로
+    :return: "mac" (CSV 형식) 또는 "windows" (plain-text 형식)
+    :raises ValueError: 두 포맷 모두 매치되지 않을 때 (지원하지 않는 형식)
+    """
+    with open(file_path, 'r', encoding='utf-8') as file:
+        first_line = file.readline().rstrip('\n')
+        second_line = file.readline().rstrip('\n')
+
+    if first_line.startswith("Date,User,Message"):
+        return "mac"
+    if "최적화 톡방" in first_line and second_line.startswith("저장한 날짜 :"):
+        return "windows"
+    raise ValueError(f"지원하지 않는 KakaoTalk 파일 포맷입니다: {file_path}")
+
+
 def extract_links_from_kakao():
     """
     'KakaoTalk'로 시작하는 텍스트 파일에서 링크를 추출하고,
