@@ -111,9 +111,10 @@ def filter_last_day_messages(messages):
 
 def extract_links_from_kakao():
     """
-    'KakaoTalk'로 시작하는 텍스트 파일에서 링크를 추출하고,
-    '/clip/'이 포함된 링크와 그렇지 않은 링크를 분리하는 함수
-    :return: 일반 링크 리스트, '/clip/' 링크 리스트
+    'KakaoTalk'로 시작하는 가장 최근 텍스트 파일의 마지막 하루치 메시지에서만
+    링크를 추출하고, '/clip/'이 포함된 링크와 그렇지 않은 링크를 분리.
+    파이프라인: 포맷 감지 → 메시지 파싱 → 마지막 하루치 필터링 → URL 추출
+    :return: 일반 링크 리스트, '/clip/' 링크 리스트 (정렬 + 중복 제거됨)
     """
     files = glob.glob("KakaoTalk*.txt")
     if not files:
@@ -123,20 +124,30 @@ def extract_links_from_kakao():
     file_name = max(files, key=os.path.getmtime)
     print(f"Reading file: {file_name}")
 
-    with open(file_name, 'r', encoding='utf-8') as file:
-        lines = file.readlines()
+    try:
+        fmt = detect_kakao_format(file_name)
+    except ValueError as e:
+        # 포맷 미식별 시에도 메인 흐름이 죽지 않도록 빈 결과 반환
+        print(f"포맷 감지 실패 — 빈 결과 반환합니다: {e}")
+        return [], []
+
+    fmt_label = "Mac CSV" if fmt == "mac" else "Windows plain-text"
+    print(f"Detected format: {fmt_label}")
+
+    messages = parse_kakao_messages(file_name, fmt)
+    last_day = filter_last_day_messages(messages)
+    print(f"Filtered: {len(messages)} → {len(last_day)} messages (last day only)")
 
     general_links = []
     clip_links = []
-
-    for line in lines:
-        match = re.search(r'https?://[^\s]+', line)
+    for _, content in last_day:
+        match = re.search(r'https?://[^\s]+', content)
         if match:
             link = match.group()
             if '/clip/' in link:
-                clip_links.append(link)  # '/clip/' 링크 저장
+                clip_links.append(link)
             else:
-                general_links.append(link)  # 일반 링크 저장
+                general_links.append(link)
 
     general_links = sorted(set(general_links))
     clip_links = sorted(set(clip_links))
