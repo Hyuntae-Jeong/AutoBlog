@@ -40,7 +40,8 @@ def detect_kakao_format(file_path):
     :return: "mac" (CSV 형식) 또는 "windows" (plain-text 형식)
     :raises ValueError: 두 포맷 모두 매치되지 않을 때 (지원하지 않는 형식)
     """
-    with open(file_path, 'r', encoding='utf-8') as file:
+    # 실제 카톡 Mac 내보내기에는 UTF-8 BOM이 붙는 경우가 있어 'utf-8-sig'로 읽어야 헤더 매치가 깨지지 않음
+    with open(file_path, 'r', encoding='utf-8-sig') as file:
         first_line = file.readline().rstrip('\n')
         second_line = file.readline().rstrip('\n')
 
@@ -63,7 +64,8 @@ def parse_kakao_messages(file_path, fmt):
     messages = []
     if fmt == "mac":
         # csv 모듈이 따옴표 처리/콤마 이스케이프를 알아서 해줘서 URL 끝 따옴표 회귀 차단
-        with open(file_path, 'r', encoding='utf-8', newline='') as file:
+        # 'utf-8-sig'로 읽어 헤더 셀에 BOM이 섞이지 않도록 함
+        with open(file_path, 'r', encoding='utf-8-sig', newline='') as file:
             reader = csv.reader(file)
             next(reader, None)  # Date,User,Message 헤더 스킵
             for row in reader:
@@ -73,7 +75,8 @@ def parse_kakao_messages(file_path, fmt):
     if fmt == "windows":
         # 메시지 라인 형식: [사용자명] [오전/오후 H:MM] 내용
         pattern = re.compile(r'^\[(.+?)\] \[(?:오전|오후) \d{1,2}:\d{2}\] (.*)$')
-        with open(file_path, 'r', encoding='utf-8') as file:
+        # Windows 내보내기도 BOM 가능성 대비 'utf-8-sig'
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
             lines = file.readlines()
         for line in lines[2:]:  # 1·2번째 줄(헤더) 스킵
             line = line.rstrip('\n')
