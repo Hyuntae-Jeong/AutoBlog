@@ -2,6 +2,7 @@
 import random
 import time
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import re
@@ -14,7 +15,11 @@ history_url = 'chrome://history/'    #Chrome history URL
 
 #크롬 실행
 def exec_chrom():
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    options = Options()
+    # Chrome 자체의 USB/GCM/TFLite 등 무해한 콘솔 로그 억제
+    options.add_argument('--log-level=3')
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.maximize_window()
     return driver
 
